@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>(Store) my playlists</title>
+    <link rel="shortcut icon" href="./elements/favicon/favicon.png" type="image/x-icon">
+
+    <style>
+        :root {
+            --bg-color: #f0f2f5;
+            --card-bg: #ffffff;
+            --text-main: #050505;
+            --text-sub: #606060;
+            --shadow: 0 1px 4px rgba(0,0,0,0.1);
+            --accent-color: #007aff;
+        }
+        * {margin:0; padding:0; box-sizing:border-box; font-family: 'Segoe UI', Tahoma, Helvetica, Arial, sans-serif; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;}
+        body {display:flex; flex-direction: column; align-items: center; background-color: var(--bg-color); padding: 40px 20px 30px;}
+        html{scrollbar-width:none;} body{-ms-overflow-style:none;} body::-webkit-scrollbar{display:none;}
+
+        .container {width:100%; max-width:600px;}
+
+        /* --- Search Bar Styling --- */
+        .search-container {
+            width: 100%;
+            /* position:sticky; top:20px; z-index:100; */
+            position: relative;
+            margin-bottom: 30px;
+            background: transparent;
+        }
+        .search-input {
+            width: 100%;
+            padding: 15px 25px;
+            border-radius: 50px;
+            border: 2px solid #e2e8f0;
+            background: #fff;
+            font-size: 16px;
+            outline: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+        .search-input:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 4px 20px rgba(0, 122, 255, 0.15);
+            /* box-shadow: 0 4px 20px rgba(111, 0, 255, 0.15); */
+        }
+
+        /* --- Accordion Styling --- */
+        .accordion {
+            background: #fff;
+            border-radius: 50px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            margin-bottom: 15px;
+            border: 1px solid #e2e8f0;
+            transition: transform 0.4s ease, opacity 0.4s ease;
+        }
+        .accordion-header {
+            width: 100%;
+            padding: 18px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            background: #fff;
+            border: none;
+            transition: background 0.3s ease;
+        }
+        .accordion-header-content {display:flex; align-items:center; gap:15px; background:transparent; text-align:left;}
+        .accordion-profile {min-width: 45px; width:45px; height:45px; border-radius:50px; /*background-color #060b10;*/ border: 1px solid #ccc; color:dark; font-size:22px; display:flex; align-items:center; justify-content:center;}
+        .accordion-header:hover {background: #f1f5f9;}
+        .accordion-header span {font-size:1rem; font-weight:bold; color:black;}
+        .icon {width:20px; height:20px; transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 0.3);}
+        .accordion-content-wrapper {
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .accordion.active .accordion-content-wrapper {grid-template-rows: 1fr;}
+        .accordion.active .icon {transform: rotate(180deg);}
+
+        .inner-content {overflow:hidden; padding: 0 20px;}
+
+        /* --- Video Card Styling --- */
+        .video-card {
+            display: flex;
+            background: var(--card-bg);
+            border-radius: 12px;
+            margin-bottom: 15px;
+            margin-top: 12px;
+            text-decoration: none;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: all 0.4s ease;
+        }
+        .video-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+        }
+
+        /* Hidden Class for Search */
+        .hidden-item {
+            display: none !important;
+            opacity: 0;
+            transform: scale(0.95);
+        }
+
+        .thumb-box {width:160px; min-width:160px; height:91px; background:#ddd;}
+        .thumb-box img {width:100%; height:100%; object-fit:cover;}
+        .info-box {padding: 12px 15px; display:flex; flex-direction:column; justify-content:flex-start;}
+        .title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-main);
+            margin: 0 0 4px 0;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .meta-data {font-size:12px; color: var(--text-sub); display:flex; align-items:center;}
+        .dot {margin: 0 6px;}
+        .footer-note {position:fixed; bottom:25px; font-size:8px; letter-spacing:5px; color: #999aad;}
+
+         /* --- Responsive Grid Styling --- */
+        @media (max-width: 600px) { 
+            body {background-color: transparent; padding: 40px 14px 30px;}
+            /* .video-list {display:grid; gap:15px; padding-bottom:15px; grid-template-columns: repeat(2, 1fr);}
+            .video-card {flex-direction:column; margin-bottom:0;} */
+            .inner-content {padding: 0 16px;}
+            .video-list {margin-bottom: 26px;}
+            .thumb-box {min-width:120px; width:120px; height:84px; aspect-ratio:16/9;}
+            .info-box {padding: 12px;}
+            .title {font-size:12px; line-height:16px; margin-bottom: 6px;}
+        } 
+        @media (min-width: 601px) and (max-width: 1024px) { /* Tablet View: 3 Columns */
+            .container {max-width: 90%;}
+            .video-list {display:grid; gap:15px; padding-bottom:15px; grid-template-columns: repeat(3, 1fr);}
+            .video-card {flex-direction: column; margin-bottom: 0;}
+            .thumb-box {width: 100%; height: auto; aspect-ratio: 16/9;}
+        }
+    </style>
+
+<!--(Splash Screen Style)-->
+    <style>
+        body, html {/*height:100%;*/ display:flex; justify-content:center; /*overflow:hidden;*/}
+        #splash-screen {
+            user-select: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            /* background-color: #1a1a1a; */
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(236, 72, 153, 0.1) 0px, transparent 50%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.8s ease, visibility 0.8s;
+        }
+        .splash-icon {width:80px; height:80px; background-color:#e0e0e0; border-radius:20%; display:flex; justify-content:center; align-items:center; animation: pulse 1.5s infinite ease-in-out; margin-bottom:20px;}
+        @keyframes pulse {
+            0% { transform: scale(0.9); opacity: 0.7; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(0.9); opacity: 0.7; }
+        }
+        #main-content {opacity: 0; transform: translateY(20px); transition: all 1s ease-out;}
+        #main-content.show {opacity: 1; transform:translateY(0);}
+        .splash-icon h1 {font-weight:300; color: #0e0418b7; letter-spacing: -0.7px; font-family: 'Times New Roman', Times, serif; font-style: italic;}
+        .fade-out {opacity:0; visibility:hidden;}
+    </style>
+</head>
+<body>
+
+
+<!-- Splash -->
+<div id="splash-screen"><div class="splash-icon"> <h1>me!</h1> </div></div>
+<div id="main-content">
+
+<!--(((((( START )))))) Main Body-->
+<div class="container">
+    <h1 style="font-family: 'Times New Roman', Times, serif; color:#403257; text-align:center;"> 
+        Playlist<span style="font-family: 'Times New Roman', Times, serif; font-style: italic; color: #b8a8d1;"> film</span>
+    </h1><br><br>
+    <div class="search-container">
+        <input type="text" id="videoSearch" class="search-input" placeholder="Search with video title here!">
+    </div>
+    <div id="main-playlist">
+
+    <!--(1)--><div class="accordion">
+            <button class="accordion-header">
+                <div class="accordion-header-content"><div class="accordion-profile">☘</div>
+                <span>30 DAYS SEO Challenge</span></div>
+                <svg class="icon" fill="none" stroke="#bbb" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+            <div class="accordion-content-wrapper">
+            <div class="inner-content">
+            <div class="video-list">
+                <div class="video-item" data-url="https://youtu.be/t64YAx_6szU" data-duration="0:30"></div>
+                <div class="video-item" data-url="https://youtu.be/h3GwEXwE-xU" data-duration="0:58"></div>
+                <div class="video-item" data-url="https://youtu.be/WvBiapgsdgg" data-duration="1:00"></div>
+                <div class="video-item" data-url="https://youtu.be/h9gza43N9v4" data-duration="1:00"></div>
+                <div class="video-item" data-url="https://youtu.be/rgOX5aSiuGk" data-duration="1:00"></div>
+                <div class="video-item" data-url="https://youtu.be/v6TegMcut5Y" data-duration="0:54"></div>
+                <div class="video-item" data-url="https://youtu.be/CO085NPPJSw" data-duration="1:00"></div>
+                <div class="video-item" data-url="https://youtu.be/W0n4Qmik97A" data-duration="0:59"></div>
+                <div class="video-item" data-url="https://youtu.be/bDxQmmPymBA" data-duration="1:00"></div>
+                <div class="video-item" data-url="https://youtu.be/bhc8mzh2n_I" data-duration="0:59"></div>
+                <div class="video-item" data-url="https://youtu.be/FE-WPFSk68s" data-duration="1:00"></div>
+                <div class="video-item" data-url="https://youtu.be/Xj0MJJxWBoM" data-duration="0:58"></div>
+                <div class="video-item" data-url="https://youtu.be/PYrTzjRhQXU" data-duration="1:00"></div>
+                <div class="video-item" data-url="https://youtu.be/JVr901ruEyg" data-duration="0:56"></div>
+                <div class="video-item" data-url="https://youtu.be/L5FAK_9MErM" data-duration="0:59"></div>
+                <div class="video-item" data-url="https://youtu.be/oOnPMKDV34s" data-duration="0:55"></div>
+                <div class="video-item" data-url="https://youtu.be/l73mo_xsmQw" data-duration="1:00"></div>
+                <div class="video-item" data-url="https://youtu.be/ygucjeTAKtU" data-duration="1:00"></div>
+                <div class="video-item" data-url="https://youtu.be/58L2JaHaJIg" data-duration="0:50"></div>
+                <div class="video-item" data-url="https://youtu.be/hoEzBVDWEug" data-duration="1:00"></div>
+                <div class="video-item" data-url="https://youtu.be/clqh1SrpVf4" data-duration="1:00"></div>
+                <div class="video-item" data-url="https://youtu.be/oIE5feyYSF4" data-duration="0:47"></div>
+                <div class="video-item" data-url="https://youtu.be/j5ekjp33pVo" data-duration="1:01"></div>
+                <div class="video-item" data-url="https://youtu.be/PXYU-07p3ys" data-duration="1:00"></div>
+                <div class="video-item" data-url="https://youtu.be/XpRKNZ9K8K8" data-duration="1:00"></div>
+                <div class="video-item" data-url="https://youtu.be/txEkJOqHoyQ" data-duration="1:00"></div>
+                <div class="video-item" data-url="https://youtu.be/iS3SVSlzo9Q" data-duration="1:00"></div>
+                <div class="video-item" data-url="https://youtu.be/iscpAIHgQTI" data-duration="1:00"></div>
+                <div class="video-item" data-url="https://youtu.be/aqs9_7BHKXs" data-duration="1:01"></div>
+                <div class="video-item" data-url="https://youtu.be/oOKSFlPysUE" data-duration="0:38"></div>
+                <div class="video-item" data-url="https://youtu.be/6oP8XDoRKd4" data-duration="1:00"></div>
+            </div>
+            </div>
+            </div>
+        </div>
+
+        <!--(2)--><div class="accordion">
+            <button class="accordion-header">
+                <div class="accordion-header-content"><div class="accordion-profile">S</div>
+                <span>Semantic SEO - Pijush Saha</span></div>
+                <svg class="icon" fill="none" stroke="#bbb" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+            <div class="accordion-content-wrapper">
+                <div class="inner-content">
+                    <div class="video-list">
+                        <div class="video-item" data-url="https://youtu.be/OvLgWuGEirI" data-duration="20:56"></div>
+                        <div class="video-item" data-url="https://youtu.be/gqnUjfLSgw0" data-duration="11.02"></div>
+                        <div class="video-item" data-url="https://youtu.be/FzD1YPt1TwY" data-duration="6:49"></div>
+                        <div class="video-item" data-url="https://youtu.be/HlUxApYkf9w" data-duration="7:43"></div>
+                        <div class="video-item" data-url="https://youtu.be/5rWsJ9Pg3Mk" data-duration="30:49"></div>
+                        <div class="video-item" data-url="https://youtu.be/DlMeQJiA9rI" data-duration="22:57"></div>
+                        <div class="video-item" data-url="https://youtu.be/N4Igs-cNCio" data-duration="22:23"></div>
+                        <div class="video-item" data-url="https://youtu.be/UQsT7HvUhlg" data-duration="31:19"></div>
+                        <div class="video-item" data-url="https://youtu.be/YD44DU13dmA" data-duration="23:59"></div>
+                        <div class="video-item" data-url="https://youtu.be/Z9WvHpYYcig" data-duration="15:48"></div>
+                        <div class="video-item" data-url="https://youtu.be/C0i0uacVoys" data-duration="10:21"></div>
+                        <div class="video-item" data-url="https://youtu.be/k1jyLV2x0FE" data-duration="11:57"></div>
+                        <div class="video-item" data-url="https://youtu.be/40Crz2YgtdQ" data-duration="18:58"></div>
+                        <div class="video-item" data-url="https://youtu.be/WkCgV1nBTO0" data-duration="5:54"></div>
+                        <div class="video-item" data-url="https://youtu.be/fO0UKy9JKR0" data-duration="12:31"></div>
+                        <div class="video-item" data-url="https://youtu.be/yztcfavOiPs" data-duration="4:07"></div>
+                        <div class="video-item" data-url="https://youtu.be/KfW4b_BBTtc" data-duration="56:13"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+<!--(((((( END )))))) Main Body-->
+
+</div> <!--Splash Div end-->
+
+
+
+<script> 
+    // ১. ভিডিও ডেটা ফেচ এবং রেন্ডার (with low-res thumbnail)
+    document.addEventListener("DOMContentLoaded", function() {
+        const videoItems = document.querySelectorAll('.video-item');
+
+        videoItems.forEach(async (element) => {
+            const url = element.getAttribute('data-url');
+            const duration = element.getAttribute('data-duration');
+            
+            try {
+                const response = await fetch(`https://www.youtube.com/oembed?url=${url}&format=json`);
+                const data = await response.json();
+
+                const lowResThumbnail = data.thumbnail_url.replace('hqdefault.jpg', 'mqdefault.jpg');
+
+                // টাইটেলটি ডেটা অ্যাট্রিবিউটে রাখা হচ্ছে সার্চের সুবিধার জন্য
+                element.setAttribute('data-title', data.title.toLowerCase());
+
+                element.innerHTML = `
+                    <a href="${url}" target="_blank" class="video-card">
+                        <div class="thumb-box">
+                            <img src="${lowResThumbnail}" alt="${data.title}">
+                        </div>
+                        <div class="info-box">
+                            <h3 class="title">${data.title}</h3>
+                            <div class="meta-data">
+                                <span>${data.author_name}</span>
+                                <span class="dot">·</span>
+                                <span>${duration}</span>
+                            </div>
+                        </div>
+                    </a>
+                `;
+            } catch (error) {
+                console.error("Video could not be loaded:", error);
+            }
+        });
+
+        // ২. ইনস্ট্যান্ট সার্চ লজিক
+        const searchInput = document.getElementById('videoSearch');
+        
+        searchInput.addEventListener('input', function(e) {
+            const term = e.target.value.toLowerCase().trim();
+            const accordions = document.querySelectorAll('.accordion');
+
+            accordions.forEach(acc => {
+                const items = acc.querySelectorAll('.video-item');
+                let hasVisibleVideo = false;
+
+                items.forEach(item => {
+                    const title = item.getAttribute('data-title') || "";
+                    if (title.includes(term)) {
+                        item.classList.remove('hidden-item');
+                        hasVisibleVideo = true;
+                    } else {
+                        item.classList.add('hidden-item');
+                    }
+                });
+
+                // যদি কোনো অ্যাকর্ডিয়ানের ভেতর ম্যাচিং ভিডিও থাকে তবে সেটি দেখাবে, নাহলে হাইড
+                if (hasVisibleVideo) {
+                    acc.classList.remove('hidden-item');
+                    // সার্চ করার সময় অটোমেটিক অ্যাকর্ডিয়ন খুলে যাবে যদি টেক্সট থাকে
+                    if (term !== "") {
+                        acc.classList.add('active');
+                    } else {
+                        acc.classList.remove('active');
+                    }
+                } else {
+                    acc.classList.add('hidden-item');
+                }
+            });
+        });
+    });
+
+    // ৩. অ্যাকর্ডিয়ন টগল লজিক
+    document.querySelectorAll('.accordion-header').forEach(button => {
+        button.addEventListener('click', () => {
+            const currentAccordion = button.parentElement;
+            const isOpen = currentAccordion.classList.contains('active');
+
+            document.querySelectorAll('.accordion').forEach(acc => {
+                acc.classList.remove('active');
+            });
+
+            if (!isOpen) {
+                currentAccordion.classList.add('active');
+            }
+        });
+    });
+</script>
+
+<script>
+    window.addEventListener('load', () => {
+        const splash = document.getElementById('splash-screen');
+        const content = document.getElementById('main-content');
+        setTimeout(() => {
+            splash.classList.add('fade-out');
+            content.classList.add('show');
+        }, 2000); 
+    });
+</script>
+
+<!-- Footer --> 
+<!-- <div class="footer-note">March 19, 2026</div> -->
+</body>
+</html>
+
+
+<!--
+PROJECT: Personal YouTube Video Playlist 
+DATE:    March.19.2026
+-->
